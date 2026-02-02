@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Backend Weather Service
+  weather-service:
+    build: ./weather-backend
+    container_name: weather-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - FLASK_ENV=development
+    volumes:
+      - ./weather-backend:/app
+    networks:
+      - weather-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Web Service
+  weather-frontend:
+    image: nginx:alpine
+    container_name: weather-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./weather-frontend:/usr/share/nginx/html:ro
+    networks:
+      - weather-network
+    depends_on:
+      - weather-service
+    restart: unless-stopped
+
+networks:
+  weather-network:
+    driver: bridge
